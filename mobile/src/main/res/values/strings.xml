@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SkyCastApp</string>
+    <string name="weather_icon_description">Weather icon</string>
 </resources>
