@@ -18,7 +18,7 @@ import kotlin.concurrent.thread
 class MainActivity : AppCompatActivity() {
 
     // Key de OpenWeatherMap
-    private val API_KEY = "72e2b05f4a7ac0322774a402ab972944"
+    private val API_KEY = "1c8f58430ab05ca9d1774a25d24030e9"
 
     // Permiso de ubicación
     private val LOCATION_PERMISSION_REQUEST = 100
@@ -82,8 +82,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun getWeather(lat: Double, lon: Double) {
-        val url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$API_KEY"
-
+        val url = "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&lang=es&appid=$API_KEY"
         thread {
             try {
                 val response = URL(url).readText()
