@@ -10,24 +10,27 @@ import com.google.android.gms.wearable.WearableListenerService
 class WeatherDataListenerService : WearableListenerService() {
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
-        Log.d(TAG, "onDataChanged: $dataEvents")
+        super.onDataChanged(dataEvents)
+        Log.d(TAG, "Nuevos datos recibidos en el reloj.")
+
         dataEvents.forEach { event ->
             if (event.type == DataEvent.TYPE_CHANGED) {
                 val dataItem = event.dataItem
-                if (dataItem.uri.path == WEATHER_DATA_PATH) {
+                if (dataItem.uri.path == WEAR_PATH) {
                     val dataMap = DataMapItem.fromDataItem(dataItem).dataMap
-                    val city = dataMap.getString(KEY_CITY)
-                    val temp = dataMap.getString(KEY_TEMP)
-                    val desc = dataMap.getString(KEY_DESC)
+                    val city = dataMap.getString(KEY_CITY, "N.A")
+                    val temp = dataMap.getString(KEY_TEMP, "--°C")
+                    val desc = dataMap.getString(KEY_DESC, "--")
+                    Log.d(TAG, "Datos extraídos: Ciudad=$city, Temp=$temp, Desc=$desc")
 
-                    Log.d(TAG, "Datos del clima recibidos: Ciudad: $city, Temp: $temp, Desc: $desc")
-
-                    // Enviar un broadcast con los datos del clima
-                    val intent = Intent(ACTION_WEATHER_UPDATE)
-                    intent.putExtra(EXTRA_CITY, city)
-                    intent.putExtra(EXTRA_TEMP, temp)
-                    intent.putExtra(EXTRA_DESC, desc)
-                    sendBroadcast(intent)
+                    Intent().also { intent ->
+                        intent.action = ACTION_WEATHER_UPDATE
+                        intent.putExtra(EXTRA_CITY, city)
+                        intent.putExtra(EXTRA_TEMP, temp)
+                        intent.putExtra(EXTRA_DESC, desc)
+                        sendBroadcast(intent)
+                        Log.d(TAG, "Broadcast enviado a MainActivity.")
+                    }
                 }
             }
         }
@@ -35,17 +38,17 @@ class WeatherDataListenerService : WearableListenerService() {
 
     companion object {
         private const val TAG = "WeatherDataListener"
+        const val ACTION_WEATHER_UPDATE = "com.example.skycastapp.ACTION_WEATHER_UPDATE"
+        const val WEAR_PATH = "/weather-data"
 
-        // Mismas constantes que en la app móvil
-        private const val WEATHER_DATA_PATH = "/weather-data"
-        private const val KEY_CITY = "city"
-        private const val KEY_TEMP = "temperature"
-        private const val KEY_DESC = "description"
+        // Claves para el Data Layer (deben coincidir con las del móvil)
+        const val KEY_CITY = "city"
+        const val KEY_TEMP = "temperature"
+        const val KEY_DESC = "description"
 
-        // Intent action y extras para el broadcast
-        const val ACTION_WEATHER_UPDATE = "com.example.skycastapp.WEATHER_UPDATE"
-        const val EXTRA_CITY = "extra_city"
-        const val EXTRA_TEMP = "extra_temp"
-        const val EXTRA_DESC = "extra_desc"
+        // Claves para el Broadcast a la MainActivity del reloj
+        const val EXTRA_CITY = "EXTRA_CITY"
+        const val EXTRA_TEMP = "EXTRA_TEMP"
+        const val EXTRA_DESC = "EXTRA_DESC"
     }
 }

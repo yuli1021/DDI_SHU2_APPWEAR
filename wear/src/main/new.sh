@@ -1,0 +1,3 @@
+bash
+    emulator -list-avds
+    

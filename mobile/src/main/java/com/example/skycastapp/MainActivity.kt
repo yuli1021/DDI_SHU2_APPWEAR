@@ -4,6 +4,7 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
+import android.os.CancellationSignal
 import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -14,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import org.json.JSONObject
@@ -21,6 +23,7 @@ import java.net.URL
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.Executor
 import kotlin.concurrent.thread
 
 class MainActivity : AppCompatActivity() {
@@ -43,7 +46,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        // **FIX: Initialize all views here, after setContentView()**
         mainLayout = findViewById(R.id.main)
         textViewDateTime = findViewById(R.id.textViewDateTime)
         textViewCity = findViewById(R.id.textViewCity)
@@ -81,14 +83,19 @@ class MainActivity : AppCompatActivity() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             return
         }
-        fusedLocationClient.lastLocation.addOnSuccessListener { location ->
-            if (location != null) {
-                getWeather(location.latitude, location.longitude)
-                getHourlyForecast(location.latitude, location.longitude)
-            } else {
-                textViewCity.text = "Ubicación no disponible"
+
+        fusedLocationClient.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, null)
+            .addOnSuccessListener { location ->
+                if (location != null) {
+                    getWeather(location.latitude, location.longitude)
+                    getHourlyForecast(location.latitude, location.longitude)
+                } else {
+                    textViewCity.text = "Ubicación no disponible"
+                }
+            }.addOnFailureListener {
+                textViewCity.text = "Error al obtener ubicación"
+                Log.e(TAG, "Error al obtener ubicación", it)
             }
-        }
     }
 
     private fun getWeather(lat: Double, lon: Double) {

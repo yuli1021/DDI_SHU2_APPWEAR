@@ -12,43 +12,43 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.content.ContextCompat
 import androidx.wear.compose.material.MaterialTheme
 import androidx.wear.compose.material.Text
-import androidx.wear.tooling.preview.devices.WearDevices
 import com.example.skycastapp.data.WeatherDataListenerService
 import com.example.skycastapp.presentation.theme.SkyCastAppTheme
 
 class MainActivity : ComponentActivity() {
 
+    private var cityState by mutableStateOf("Waiting for data...")
+    private var tempState by mutableStateOf("--°C")
+    private var descState by mutableStateOf("--")
+
     private lateinit var weatherUpdateReceiver: BroadcastReceiver
-    private val cityState = mutableStateOf("Cargando...")
-    private val tempState = mutableStateOf("--°C")
-    private val descState = mutableStateOf("--")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
-        setTheme(android.R.style.Theme_DeviceDefault)
 
         weatherUpdateReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context, intent: Intent) {
-                cityState.value = intent.getStringExtra(WeatherDataListenerService.EXTRA_CITY) ?: "N/A"
-                tempState.value = intent.getStringExtra(WeatherDataListenerService.EXTRA_TEMP) ?: "--°C"
-                descState.value = intent.getStringExtra(WeatherDataListenerService.EXTRA_DESC) ?: "--"
+                cityState = intent.getStringExtra(WeatherDataListenerService.EXTRA_CITY) ?: "N.A"
+                tempState = intent.getStringExtra(WeatherDataListenerService.EXTRA_TEMP) ?: "--°C"
+                descState = intent.getStringExtra(WeatherDataListenerService.EXTRA_DESC) ?: "--"
             }
         }
 
         setContent {
             WearApp(
-                city = cityState.value,
-                temp = tempState.value,
-                desc = descState.value
+                city = cityState,
+                temperature = tempState,
+                description = descState
             )
         }
     }
@@ -56,7 +56,7 @@ class MainActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         val filter = IntentFilter(WeatherDataListenerService.ACTION_WEATHER_UPDATE)
-        registerReceiver(weatherUpdateReceiver, filter)
+        ContextCompat.registerReceiver(this, weatherUpdateReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
     }
 
     override fun onPause() {
@@ -66,7 +66,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WearApp(city: String, temp: String, desc: String) {
+fun WearApp(city: String, temperature: String, description: String) {
     SkyCastAppTheme {
         Column(
             modifier = Modifier
@@ -76,29 +76,35 @@ fun WearApp(city: String, temp: String, desc: String) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.primary,
                 text = city,
-                style = MaterialTheme.typography.title1
+                style = MaterialTheme.typography.title1,
+                color = androidx.compose.ui.graphics.Color.White
+            )
+
+            val tempColor = when {
+                temperature.contains("-") -> androidx.compose.ui.graphics.Color.Cyan
+                (temperature.removeSuffix("°C").toIntOrNull() ?: 0) >= 28 -> androidx.compose.ui.graphics.Color.Red
+                else -> androidx.compose.ui.graphics.Color.White
+            }
+
+            Text(
+                text = temperature,
+                style = MaterialTheme.typography.display1,
+                color = tempColor
             )
             Text(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.primary,
-                text = temp,
-                style = MaterialTheme.typography.display1
-            )
-            Text(
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colors.secondary,
-                text = desc,
-                style = MaterialTheme.typography.body1
+                text = description,
+                style = MaterialTheme.typography.body1,
+                color = androidx.compose.ui.graphics.Color(0xFF054FF7)
             )
         }
     }
 }
 
-@Preview(device = WearDevices.SMALL_ROUND, showSystemUi = true)
+
+@Preview(device = "id:wearos_small_round", showSystemUi = true)
 @Composable
 fun DefaultPreview() {
-    WearApp("Los Angeles", "24°C", "Soleado")
+    WearApp(city = "Ramos Arizpe", temperature = "30°C", description = "" +
+            "Soleado")
 }
